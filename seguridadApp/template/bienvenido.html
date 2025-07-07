@@ -1,0 +1,14 @@
+{% extends "plantilla.html" %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block header %}Bienvenido{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="alert alert-success">
+        Inicio de sesión exitoso.
+    </div>
+    <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar sesión</a>
+</div>
+{% endblock %}

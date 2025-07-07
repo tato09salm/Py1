@@ -1,0 +1,71 @@
+{% extends "plantilla.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card card-outline card-info mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h1 class="card-title m-0">LISTADO DE CLIENTES</h1>
+            <a href="{% url 'agregarcliente' %}" class="btn btn-sm btn-primary"><i class="fas fa-plus"></i> NUEVO</a>
+        </div>
+        <div class="card-body">
+            <form method="get">
+                <div class="input-group">
+                    <input type="text" name="buscar" class="form-control" placeholder="Buscar">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary"><i class="fa fa-search"></i></button>
+                    </span>
+                </div>
+            </form>
+            <table class="table table-striped mt-4">
+                <thead class="bg-info text-white">
+                    <tr>
+                        <th>CODIGO</th>
+                        <th>RUC/DNI</th>
+                        <th>NOMBRES</th>
+                        <th>EMAIL</th>
+                        <th>DIRECCION</th>
+                        <th class="text-center">OPCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cliente %}
+                    <tr>
+                        <td>{{ item.idcliente}}</td>
+                        <td>{{ item.ruc_dni }}</td>
+                        <td>{{ item.nombres }}</td>
+                        <td>{{ item.email }}</td>
+                        <td>{{ item.direccion }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'editarcliente' item.idcliente %}" class="btn btn-info btn-sm"><i class="fa fa-edit"></i> Editar</a>
+                            <a href="#" onclick="eliminarCliente('{{item.idcliente}}','{{item.nombres}}')" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> Eliminar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">No hay registros</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  function eliminarCliente(id, nombres){
+    Swal.fire({
+      title: "¿Eliminar?",
+      text: "Código: " + id + " - " + nombres,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "/eliminarcliente/" + id + "/";
+      }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "plantilla.html" %}
+
+{% block content %}
+<div class="container">
+    <h3 class="mb-4">Anular Venta</h3>
+
+    <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">¡Atención!</h4>
+        <p>Estás a punto de <strong>anular</strong> la venta <strong>#{{ venta.id }}</strong> realizada el <strong>{{ venta.fechaventa }}</strong>.</p>
+        <hr>
+        <p class="mb-0">Esta acción no eliminará la venta del sistema, pero marcará su estado como <strong>"ANULADA"</strong>.</p>
+    </div>
+
+    <form method="POST" action="{% url 'anularventa' venta.id %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="motivo" class="form-label">Motivo de anulación (opcional):</label>
+            <textarea name="motivo" id="motivo" rows="3" class="form-control" placeholder="Ej: Cliente canceló la compra"></textarea>
+        </div>
+
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-danger"><i class="fas fa-ban"></i> Confirmar Anulación</button>
+            <a href="{% url 'listarventa' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

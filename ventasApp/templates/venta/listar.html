@@ -1,0 +1,98 @@
+{% extends "plantilla.html" %}
+
+{% block content %}
+<div class="container">
+    <h3> LISTADO DE VENTAS </h3><br>
+    <a href="{% url 'agregarventa' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Registro</a>
+    
+    <nav class="navbar navbar-light float-right">
+        <form class="form-inline my-2 my-lg-0" method="GET">
+            <input name="buscarpor" class="form-control mr-sm-2" type="search" placeholder="Búsqueda por cliente" value="{{ buscarpor|default:'' }}">
+            <button class="btn btn-success my-2 my-sm-0" type="submit">Buscar</button>
+        </form>
+    </nav>
+
+    <table class="table">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">ID Cliente</th>
+                <th scope="col">Nombre Cliente</th>
+                <th scope="col">IGV</th>
+                <th scope="col">Subtotal</th>
+                <th scope="col">Total</th>
+                <th scope="col">Opciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for venta in ventas %}
+            <tr>
+                <td>{{ venta.id }}</td>
+                <td>{{ venta.idtipo.descripcion|default:"Tipo no disponible" }}</td>
+                <td>{{ venta.fechaventa }}</td>
+                <td>{{ venta.idcliente.idcliente }}</td>
+                <td>{{ venta.idcliente.nombres }}</td>
+                <td>S/ {{ venta.igv|floatformat:2 }}</td>
+                <td>S/ {{ venta.subtotal|floatformat:2 }}</td>
+                <td>S/ {{ venta.total|floatformat:2 }}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm btn-anular" data-id="{{ venta.id }}">
+                        <i class="fas fa-times-circle"></i> Anular
+                    </button>
+                </td>
+            </tr>
+        {% empty %}
+            {% if not no_resultado %}
+                <tr><td colspan="9">No se encontraron ventas registradas.</td></tr>
+            {% endif %}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block js %}
+
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% if no_resultado %}
+<script>
+Swal.fire({
+  title: "Sin resultados",
+  text: "No se encontraron ventas para '{{ buscarpor }}'",
+  icon: "info",
+  confirmButtonText: "Aceptar"
+});
+</script>
+{% endif %}
+
+<!-- Script SIEMPRE ACTIVO para botones Anular -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const botonesAnular = document.querySelectorAll('.btn-anular');
+
+    botonesAnular.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const ventaId = this.getAttribute('data-id');
+
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción anulará la venta #" + ventaId,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Sí, anular',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/venta/anular/${ventaId}/`;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

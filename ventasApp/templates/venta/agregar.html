@@ -1,0 +1,434 @@
+{% extends "plantilla.html" %}
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'calendario/css/bootstrap-datepicker.standalone.css' %}">
+
+{% block content %}
+<div class="container">
+  <h1>Registrar Venta</h1>
+
+  <form method="POST" action="{% url 'agregarventa' %}">
+    {% csrf_token %}
+
+    <!-- MENSAJE DE ERROR -->
+<div class="alert alert-danger alert-dismissible fade show" role="alert" style="display:none;">
+  <strong>Error!</strong> <span id="mensajeErrorTexto"></span>
+  <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+    <!-- FECHA Y TIPO -->
+    <div class="row">
+      <div class="col-md-1"><label for="fechaventa">Fecha</label></div>
+      <div class="col-md-2">
+        <div class="input-group date form_date" data-date-format="dd/mm/yyyy" data-provide="datepicker">
+          <input type="text" class="form-control" name="fechaventa" id="fechaventa" value="{{ fecha_actual }}" style="text-align:center;">
+          <div class="input-group-btn">
+            <button class="btn btn-primary" type="button"><i class="fa fa-calendar"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-1"></div>
+      <div class="col-md-1"><label for="idtipo">Tipo</label></div>
+      <div class="col-md-2">
+       <select class="form-control" id="idtipo" name="idtipo">
+          <option value="">- Seleccione Tipo -</option>
+          {% for tipo_item in tipos %}
+            <option value="{{ tipo_item.id }}" {% if tipo_item.descripcion == "FACTURA" %}selected{% endif %}>
+              {{ tipo_item.descripcion }}
+            </option>
+          {% endfor %}
+        </select>
+
+      </div>
+
+      <div class="col-md-1"></div>
+      <div class="col-md-1"><label for="nrodoc">No Doc.</label></div>
+      <div class="col-md-3">
+        <input type="text" class="form-control" name="nrodoc" id="nrodoc" value="{{ parametros.numeracion }}">
+      </div>
+    </div>
+
+    <!-- CLIENTE -->
+    <div class="row mt-3">
+      <div class="col-md-1"><label for="idcliente">Cliente</label></div>
+      <div class="col-md-7">
+        <select class="form-control" id="idcliente" name="idcliente">
+          <option value="" selected>- Seleccione Cliente -</option>
+          {% for cliente_item in clientes %}
+            <option value="{{ cliente_item.idcliente }}">{{ cliente_item.nombres }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- dni/ruc Y DIRECCIÓN -->
+    <div class="row mt-2">
+      <div class="col-md-1"><label for="ruc_dni">Ruc/Dni</label></div>
+      <div class="col-md-2"><input type="text" class="form-control" id="ruc_dni" name="ruc_dni" readonly></div>
+      <div class="col-md-1"><label for="direccion">Dirección</label></div>
+      <div class="col-md-8"><input type="text" class="form-control" id="direccion" name="direccion" readonly></div>
+    </div>
+
+    <!-- PRODUCTO -->
+    <div class="row mt-3">
+      <div class="col-md-1"><label for="producto_id">Producto</label></div>
+      <div class="col-md-6">
+        <select class="form-control" id="producto_id" name="producto_id">
+          <option value="" selected>- Seleccione Producto -</option>
+          {% for producto_item in productos %}
+            <option value="{{ producto_item.producto_id }}">{{ producto_item.descripcion }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-1"><label for="unidad">Unidad</label></div>
+      <div class="col-md-2">
+        <input type="text" class="form-control" id="unidad" name="unidad" readonly>
+      </div>
+    </div>
+
+    <!-- PRECIO Y CANTIDAD -->
+    <div class="row pt-3">
+      <div class="col-md-1"></div>
+      <div class="col-md-1">
+        <label for="pventa">Precio</label>
+      </div>
+      <div class="col-md-2">
+        <input type="text" class="form-control" name="pventa" id="pventa">
+      </div>
+      <div class="col-md-1">
+        <label for="cantidad">Cantidad</label>
+      </div>
+      <div class="col-md-2">
+        <input type="text" class="form-control" name="cantidad" id="cantidad">
+      </div>
+      <div class="col-md-3">
+        <button type="button" id="btnadddet" name="btnadddet" class="btn btn-success">
+          <i class="fas fa-shopping-cart"></i> Agregar al carrito
+        </button>
+      </div>
+      <div class="col-md-2">
+        <input type="text" class="form-control" name="stock" id="stock" hidden>
+      </div>
+    </div>
+
+    <!--TABLA DETALLE VENTA-->
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-12">
+          <table class="table table-sm table-bordered mt-4" id="detalles">
+            <thead class="thead-dark">
+              <tr>
+                <th></th>
+                <th>ID</th>
+                <th>Descripción</th>
+                <th>Unidad</th>
+                <th class="text-right">Cantidad</th>
+                <th class="text-right">Precio</th>
+                <th class="text-right">Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filas agregadas dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!--TOTAL AUTOCALCULABLE-->
+      <div class="row justify-content-end mt-3 ">
+        <div class="col-md-3">
+          <div class="border rounded bg-warning p-3 text-end shadow-sm">
+            <h5 class="mb-0">
+              <strong>Total:</strong> S/ <span id="totalMostrado">0.00</span>
+            </h5>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+    <input type="hidden" name="subtotal" id="subtotal">
+    <input type="hidden" name="igv" id="igv">
+    <input type="hidden" name="total" id="total">
+
+    <!-- BOTONES -->
+    <div class="text-center mt-4">
+      <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Registrar</button>
+      <a href="{% url 'listarventa' %}" class="btn btn-danger"><i class="fas fa-ban"></i> Cancelar</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block js %}
+<!-- Bootstrap Datepicker (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<!-- Bootstrap Datepicker Spanish Locale -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+
+  <script>
+      var cont = 0;
+      var total = 0;
+      var detalleventa = [];
+      var subtotal = [];
+      var controlproducto = [];
+      var tipoDocumento = ""; 
+
+      $(document).ready(function(){
+          tipoDocumento = $('#idtipo option:selected').text().toUpperCase();
+
+          $('#idcliente').change(function(){
+              let idcliente = $(this).val();
+              if (idcliente && idcliente != '0') {
+                  $.get('/venta/datos-cliente/' + idcliente, function(data){
+                      $('#ruc_dni').val(data.ruc_dni ?? '');
+                      $('#direccion').val(data.direccion ?? '');
+                  });
+              } else {
+                  $('#ruc_dni').val('');
+                  $('#direccion').val('');
+              }
+          });
+
+        $('#producto_id').change(function(){
+              let producto_id = $(this).val();
+              if (producto_id && producto_id != '0') {
+                  $.get('/venta/datos-producto/' + producto_id, function(data){
+                      $('#unidad').val(data.unidad ?? '');
+                      $('#pventa').val(data.precio ?? '');
+                      $('#stock').val(data.stock ?? '');
+                  });
+              } else {
+                  $('#unidad').val('');
+                  $('#pventa').val('');
+                  $('#stock').val('');
+              }
+          });
+
+           $('#btnadddet').click(function(){ agregarDetalle(); });
+
+      });
+
+      function mostrarMensajeError(mensaje){
+          $(".alert").css('display', 'block').removeClass("hidden").addClass("alert-danger");
+          $(".alert").html("<button type='button' class='close' data-close='alert'>×</button><span><b>Error!</b> " + mensaje + ".</span>");
+          $('.alert').delay(5000).hide(400);
+      }
+
+      function agregarDetalle(){
+        
+        
+          let idcliente = $("#idcliente").val();
+          if (idcliente == '0') {
+              mostrarMensajeError("Por favor seleccione el Cliente");
+              return;
+          }
+          let idproducto = $("#producto_id").val();
+          let descripcion = $('#producto_id option:selected').text(); 
+          
+
+          if (idproducto == '0') {
+              mostrarMensajeError("Por favor seleccione el Producto");
+              return;
+          }
+
+          let cantidad = parseFloat($("#cantidad").val());
+          let stock = parseFloat($("#stock").val());
+
+          if (!cantidad || cantidad <= 0) {
+              mostrarMensajeError("Por favor ingrese una cantidad válida");
+              return;
+          }
+
+          if (cantidad > stock) {
+              mostrarMensajeError("No hay suficiente stock. Solo hay " + stock);
+              return;
+          }
+
+
+          let pventa = $("#pventa").val();
+          if (!pventa || pventa <= 0) {
+              mostrarMensajeError("Por favor ingrese precio de venta");
+              return;
+          }
+
+          // Verificar producto repetido en detalleventa
+          for (let item of detalleventa) {
+              if (item.codigo == idproducto) {
+                  mostrarMensajeError("No puede volver a agregar el mismo producto");
+                  return;
+              }
+          }
+
+          let unidad = $("#unidad").val();
+          let importe = parseFloat(cantidad) * parseFloat(pventa);
+
+          
+
+          let fila = `
+          <tr id="fila${cont}">
+              <td style="text-align:center;">
+                  <button type="button" class="btn btn-danger btn-xs" onclick="eliminardetalle(${cont})">
+                      <i class="fa fa-times"></i>
+                  </button>
+              </td>
+              <td><input type="hidden" name="idproducto[]" value="${idproducto}">${idproducto}</td>
+              <td>${descripcion}</td>
+              <td><input type="hidden" name="unidad[]" value="${unidad}">${unidad}</td>
+              <td class="text-right"><input type="hidden" name="cantidad[]" value="${cantidad}">${cantidad}</td>
+              <td class="text-right"><input type="hidden" name="pventa[]" value="${pventa}">${number_format(pventa,2)}</td>
+              <td class="text-right importe">${number_format(importe,2)}</td>
+          </tr>`;
+
+
+
+          $('#detalles tbody').append(fila);
+
+          detalleventa.push({ index: cont, codigo: idproducto, importe: importe });
+          let nuevoStock = stock - cantidad;
+          $("#stock").val(nuevoStock); // actualiza el input de stock
+
+          actualizarTotal();
+          limpiarCamposProducto();
+          cont++;
+      }
+
+      function limpiarCamposProducto(){
+          $("#idproducto").val('0').trigger('change'); // reinicia select2/select
+          $("#unidad").val('');
+          $("#pventa").val('');
+          $("#cantidad").val('');
+          $("#stock").val('');
+      }
+
+      function eliminardetalle(index){
+          detalleventa = detalleventa.filter(item => item.index !== index);
+          $("#fila" + index).remove();
+          actualizarTotal();
+      }
+
+
+       
+
+
+  //   function actualizarTotal() {
+  //     let totalTmp = detalleventa.reduce((sum, item) => sum + item.importe, 0);
+  //     let igvTmp = totalTmp * 0.18;
+  //     let subtotalTmp = totalTmp - igvTmp;
+
+  //     $('#total').val(number_format(totalTmp, 2));
+  //     $('#igv').val(number_format(igvTmp, 2));
+  //     $('#subtotal').val(number_format(subtotalTmp, 2));
+
+  //     // MOSTRAR en pantalla debajo de la tabla
+  //     $('#totalMostrado').text(number_format(totalTmp, 2));
+  // }
+
+
+
+
+      function number_format(amount, decimals = 2) {
+          amount = parseFloat(amount);
+          if (isNaN(amount)) amount = 0;
+          return amount.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+  </script>
+
+  <!--NO recuerdo para que era xd, no borrar-->
+  <script>
+  
+          $('#idtipo').change(function () {
+            tipoDocumento = $('#idtipo option:selected').text().toUpperCase(); 
+              let idtipo = $(this).val();
+              let descripcionTipo = $('#idtipo option:selected').text().trim().toUpperCase();
+              
+              // Actualiza la variable de control
+             // tipoDocumento = descripcionTipo;
+
+              // Lógica para traer numeración del backend (nrodoc)
+              if (idtipo) {
+                  $.get('/venta/parametro-por-tipo/' + idtipo + '/', function (data) {
+                      if (data.nrodoc) {
+                          $('#nrodoc').val(data.nrodoc);
+                      } else {
+                          $('#nrodoc').val('');
+                      }
+                  });
+              } else {
+                  $('#nrodoc').val('');
+              }
+
+              // Vuelve a calcular los totales con el nuevo tipo
+              actualizarTotal();
+          });
+
+          function actualizarTotal() {
+            let totalImporte = detalleventa.reduce((sum, item) => sum + item.importe, 0);
+            let subtotalTmp = 0;
+            let igvTmp = 0;
+            let totalTmp = 0;
+
+            if (tipoDocumento === "FACTURA") {
+                subtotalTmp = totalImporte;
+                igvTmp = subtotalTmp * 0.18;
+                totalTmp = subtotalTmp + igvTmp;
+            } else {
+                // Para BOLETA u otros
+                subtotalTmp = totalImporte;
+                igvTmp = 0;
+                totalTmp = subtotalTmp;
+            }
+
+            // Actualiza campos ocultos
+            $('#subtotal').val(number_format(subtotalTmp, 2));
+            $('#igv').val(number_format(igvTmp, 2));
+            $('#total').val(number_format(totalTmp, 2));
+
+            // Muestra el total final en pantalla
+            $('#totalMostrado').text(number_format(totalTmp, 2));
+        }
+
+</script>
+
+<!--autocompletar-->
+<script>
+  $('#idcliente').change(function(){
+    let idcliente = $(this).val();
+    if (idcliente && idcliente !== '0') {
+        $.get('/venta/datos-cliente/' + idcliente + '/', function(data){
+            $('#ruc_dni').val(data.ruc_dni ?? '');
+            $('#direccion').val(data.direccion ?? '');
+        });
+    } else {
+        $('#ruc_dni').val('');
+        $('#direccion').val('');
+    }
+});
+
+$('#producto_id').change(function(){
+    let producto_id = $(this).val();
+    if (producto_id && producto_id !== '0') {
+        $.get('/venta/datos-producto/' + producto_id + '/', function(data){
+            $('#pventa').val(data.precio ?? '');
+            $('#stock').val(data.stock ?? '');
+            $('#unidad').val(data.unidad ?? '');
+        });
+    } else {
+        $('#pventa').val('');
+        $('#stock').val('');
+        $('#unidad').val('');
+    }
+});
+
+</script>
+
+
+
+
+{% endblock %}
+
